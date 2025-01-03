@@ -1,0 +1,158 @@
+
+Reward mining contract
+steps to run
+1. Setup Environment
+Install Node.js (LTS version recommended).
+Install the required tools:
+bash
+Copy code
+npm install -g hardhat
+2. Create a Hardhat Project
+Initialize a new Hardhat project:
+bash
+Copy code
+mkdir winngoo-project
+cd winngoo-project
+npx hardhat
+Choose "Create a basic sample project" and follow the prompts.
+3. Add the Contract
+Replace the default Greeter.sol file in contracts/ with the WINNGOO contract code provided.
+4. Install Dependencies
+Install OpenZeppelin libraries and other dependencies:
+bash
+Copy code
+npm install @openzeppelin/contracts
+5. Compile the Contract
+Compile the smart contract:
+bash
+Copy code
+npx hardhat compile
+6. Set Up Deployment Script
+Create a deployment script in scripts/deploy.js:
+javascript
+Copy code
+const hre = require("hardhat");
+
+async function main() {
+    const initialSupply = 1000000; // Replace with desired initial supply
+    const WINNGOO = await hre.ethers.getContractFactory("WINNGOO");
+    const winngoo = await WINNGOO.deploy(initialSupply);
+
+    await winngoo.deployed();
+
+    console.log("WINNGOO deployed to:", winngoo.address);
+}
+
+main()
+    .then(() => process.exit(0))
+    .catch((error) => {
+        console.error(error);
+        process.exit(1);
+    });
+7. Deploy to Local or Testnet
+Start a local Ethereum node (optional for local testing):
+bash
+Copy code
+npx hardhat node
+Deploy the contract:
+bash
+Copy code
+npx hardhat run scripts/deploy.js --network <network-name>
+Replace <network-name> with localhost (for local) or testnets like rinkeby or sepolia. Update the hardhat.config.js with your network configuration if deploying to a testnet.
+8. Interact with the Contract
+Use the Hardhat console to interact:
+bash
+Copy code
+npx hardhat console --network <network-name>
+Example commands:
+javascript
+Copy code
+const WINNGOO = await ethers.getContractAt("WINNGOO", "<deployed-contract-address>");
+await WINNGOO.transfer("<recipient-address>", ethers.utils.parseUnits("100", 18));
+
+
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+contract WINNGOO {
+    // Token details
+    string public name = "WINNGOO";
+    string public symbol = "WNG";
+    uint8 public decimals = 18;
+    uint256 public totalSupply;
+
+    // Mapping to keep track of balances and rewards
+    mapping(address => uint256) public balanceOf;
+    mapping(address => bool) public hasRegistered;
+    mapping(address => address) public referrals;
+
+    // Owner of the contract
+    address public owner;
+
+    // Events
+    event Transfer(address indexed from, address indexed to, uint256 value);
+    event RewardDistributed(address indexed to, uint256 value);
+    event ReferralReward(address indexed referrer, uint256 value);
+
+    constructor(uint256 _initialSupply) {
+        owner = msg.sender;
+        totalSupply = _initialSupply * (10 ** decimals);
+        balanceOf[owner] = totalSupply;
+    }
+
+    modifier onlyOwner() {
+        require(msg.sender == owner, "Only owner can perform this action");
+        _;
+    }
+
+    // Function to transfer tokens
+    function transfer(address _to, uint256 _value) public returns (bool success) {
+        require(balanceOf[msg.sender] >= _value, "Insufficient balance");
+        require(_to != address(0), "Invalid address");
+
+        balanceOf[msg.sender] -= _value;
+        balanceOf[_to] += _value;
+
+        emit Transfer(msg.sender, _to, _value);
+        return true;
+    }
+
+    // Function for user registration and reward
+    function register(address _referrer) public {
+        require(!hasRegistered[msg.sender], "User already registered");
+
+        // Initial reward
+        uint256 reward = 0.5 * (10 ** decimals);
+        require(balanceOf[owner] >= reward, "Insufficient reward tokens in contract");
+
+        hasRegistered[msg.sender] = true;
+        balanceOf[owner] -= reward;
+        balanceOf[msg.sender] += reward;
+
+        emit RewardDistributed(msg.sender, reward);
+
+        // Referral reward
+        if (_referrer != address(0) && hasRegistered[_referrer]) {
+            uint256 referralReward = 0.1 * (10 ** decimals);
+            referrals[msg.sender] = _referrer;
+            balanceOf[owner] -= referralReward;
+            balanceOf[_referrer] += referralReward;
+
+            emit ReferralReward(_referrer, referralReward);
+        }
+    }
+
+    // Function to mint new tokens (if needed)
+    function mint(uint256 _amount) public onlyOwner {
+        uint256 amount = _amount * (10 ** decimals);
+        totalSupply += amount;
+        balanceOf[owner] += amount;
+
+        emit Transfer(address(0), owner, amount);
+    }
+
+    // Function to check if a user is registered
+    function isRegistered(address _user) public view returns (bool) {
+        return hasRegistered[_user];
+    }
+}

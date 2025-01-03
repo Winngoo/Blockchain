@@ -1,0 +1,113 @@
+import React, { useState } from 'react';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+
+const App = () => {
+  const [walletAddress, setWalletAddress] = useState("");
+  const [balance, setBalance] = useState("0");
+  const [referrer, setReferrer] = useState("");
+  const [status, setStatus] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+
+  const connectWallet = async () => {
+    setIsLoading(true);
+    // Simulate connection delay
+    setTimeout(() => {
+      setWalletAddress("0x742d35Cc6634C0532925a3b844Bc454e4438f44e");
+      setStatus("Connected to wallet.");
+      setIsLoading(false);
+    }, 1000);
+  };
+
+  const fetchBalance = async () => {
+    if (walletAddress) {
+      // Simulate balance fetch
+      setBalance("1000.00");
+    }
+  };
+
+  const registerUser = async () => {
+    if (!walletAddress) {
+      setStatus("Please connect your wallet first.");
+      return;
+    }
+
+    setIsLoading(true);
+    // Simulate registration delay
+    setTimeout(() => {
+      setStatus("Registration successful!");
+      setIsLoading(false);
+    }, 2000);
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50 p-8">
+      <Card className="max-w-2xl mx-auto">
+        <CardHeader>
+          <CardTitle className="text-3xl font-bold text-center">WINNGOO Token</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {!walletAddress ? (
+            <Button 
+              onClick={connectWallet} 
+              disabled={isLoading}
+              className="w-full"
+            >
+              {isLoading ? "Connecting..." : "Connect Wallet"}
+            </Button>
+          ) : (
+            <div className="space-y-4">
+              <div className="p-4 bg-gray-100 rounded-lg">
+                <p className="text-sm text-gray-600">Wallet Address:</p>
+                <p className="font-mono break-all">{walletAddress}</p>
+              </div>
+              
+              <div className="p-4 bg-gray-100 rounded-lg">
+                <p className="text-sm text-gray-600">Balance:</p>
+                <p className="text-2xl font-bold">{balance} WNG</p>
+              </div>
+              
+              <Button 
+                onClick={fetchBalance} 
+                variant="outline" 
+                className="w-full"
+              >
+                Refresh Balance
+              </Button>
+            </div>
+          )}
+
+          {walletAddress && (
+            <div className="space-y-4">
+              <h2 className="text-xl font-semibold">Register</h2>
+              <Input
+                type="text"
+                placeholder="Referrer Address (optional)"
+                value={referrer}
+                onChange={(e) => setReferrer(e.target.value)}
+                className="w-full"
+              />
+              <Button 
+                onClick={registerUser} 
+                disabled={isLoading}
+                className="w-full"
+              >
+                {isLoading ? "Processing..." : "Register"}
+              </Button>
+            </div>
+          )}
+
+          {status && (
+            <Alert>
+              <AlertDescription>{status}</AlertDescription>
+            </Alert>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
+
+export default App;
